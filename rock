@@ -1,0 +1,85 @@
+#!/bin/bash
+ROCKIP="192.168.1.84"
+JQ=/usr/bin/jq
+
+case $1 in 
+	status)
+		OUTPUT=`curl http://$ROCKIP/1/getstate 2>/dev/null`
+		if [ -f $JQ ]
+		then
+			echo $OUTPUT | $JQ .
+		else
+			echo $OUTPUT
+			echo
+			echo you should either install jq or fix the JQ variable in $0 for better looking output
+                fi
+		;;
+	has_cdrom)
+		OUTPUT=`curl http://$ROCKIP/1/getstate 2>/dev/null`
+		if [ -f $JQ ]
+		then
+			echo output \"fail\" means there is a CDROM connected \(see "$0 status"\), 
+			echo \"no_cd_rom\" means, there is not
+			echo $OUTPUT | $JQ .data.state.cd.status
+		else
+			echo can\'t find out, see last line of output of $0 status
+		fi
+		;;
+	eject)
+		OUTPUT=`curl http://$ROCKIP/1/getstate 2>/dev/null`
+		if [ -f $JQ ]
+                then
+			CDROM=`echo $OUTPUT | $JQ -M .data.state.cd.status`
+			if [ x$CDROM = x\"no_cd_rom\" ]
+			then
+				echo ROCK at $ROCKIP has no CDROM
+			else
+				curl http://$ROCKIP/1/eject
+				echo should have ejected CDROM connected to ROCK, please check
+			fi
+		fi
+		;;
+	reboot)
+		curl http://$ROCKIP/1/reboot
+		ping $ROCKIP -ac 30
+		;;
+	poweroff)
+		curl http://$ROCKIP/1/poweroff
+		ping $ROCKIP -ac 10
+		;;
+	stop)
+		echo "stopping Roon Software on ROCK at $ROCKIP"
+		curl http://$ROCKIP/1/stop
+		;;
+	restart)
+		echo "restarting Roon Software on ROCK"
+		curl http://$ROCKIP/1/restart
+		;;
+	wake)
+		etherwake rock
+		ping $ROCKIP -ac 30
+		;;
+	*)
+		echo $0 \<cmd\>
+		cat <<- "_EOF_"
+
+		possible <cmd> are:
+		    poweroff:  shuts down gracefully and powers off at $ROCKIP
+		    wake:      sends "magic packet" to ROCK over network to power on
+		    status:    gives back some JSON-formatted status output of ROCK at $ROCKIP
+		    has_cdrom: outputs "no_cd_rom" if none connected or other
+		    eject:     ejects disk in a connected CDROM (if one is connected\
+		    reboot:    reboots your ROCK
+		    restart:   restarts ROON software
+		    stop:      stops ROON software 
+		    wake:      sends "magic packet" to ROCK over network to power on
+
+		    requirements:
+
+		    poweroff, status, has_cdrom, eject, reboot, restart, stop need "curl"
+		    wake needs "etherwake" and the proper mac-address in /etc/ethers for "rock"
+		    status, has_cdrom and eject need "jq" installed
+
+		_EOF_
+		;;
+esac

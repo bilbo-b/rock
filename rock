@@ -68,7 +68,7 @@ case $1 in
 		    wake:      sends "magic packet" to ROCK over network to power on
 		    status:    gives back some JSON-formatted status output of ROCK at $ROCKIP
 		    has_cdrom: outputs "no_cd_rom" if none connected or other
-		    eject:     ejects disk in a connected CDROM (if one is connected\
+		    eject:     ejects disk in a connected CDROM (if one is connected)
 		    reboot:    reboots your ROCK
 		    restart:   restarts ROON software
 		    stop:      stops ROON software 
